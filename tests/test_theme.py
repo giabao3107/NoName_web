@@ -1,4 +1,4 @@
-from theme import PAL, TIER_COLORS, status_colors
+from theme import APP_BACKGROUND, PAL, TIER_COLORS, status_colors
 
 
 def test_streamlit_theme_uses_the_team_palette_and_tier_semantics():
@@ -15,3 +15,4 @@ def test_streamlit_theme_uses_the_team_palette_and_tier_semantics():
     }
     assert TIER_COLORS == {"High": "#004AAD", "Medium": "#C8D1D9", "Low": "#C51E1E"}
     assert status_colors() == ["#C51E1E", "#C8D1D9", "#004AAD"]
+    assert APP_BACKGROUND == "#FFFFFF"

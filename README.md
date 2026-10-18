@@ -1,6 +1,6 @@
 # Customer Intelligence 360° — Streamlit dashboard
 
-Interactive Streamlit + Plotly dashboard for the BI10 Season 10 Round 2 financial-services challenges: Financial Health Score, Engagement Score, and segmentation / Next Best Actions. It uses the team's palette from `Code/config/utils.py`.
+Interactive Streamlit + Plotly dashboard for the BI10 Season 10 Round 2 financial-services challenges: Financial Health Score, Engagement Score, and segmentation / Next Best Actions. It uses the team's palette from `Code/config/utils.py` on a white app canvas matching the chart backgrounds.
 
 ## Public demo and full-population analysis
 

@@ -12,6 +12,8 @@ PAL = {
     "ink": "#585757",
 }
 
+APP_BACKGROUND = PAL["card"]
+
 TIER_COLORS = {
     "High": PAL["navy"],
     "Medium": PAL["amber"],

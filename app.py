@@ -11,12 +11,12 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from data import customer_frame, filter_customers, load_dashboard_data, update_full_population_aggregates
-from theme import PAL, TIER_COLORS, status_colors
+from theme import APP_BACKGROUND, PAL, TIER_COLORS, status_colors
 
 NAVY = PAL["navy"]
 ORANGE = PAL["orange"]
 AMBER = PAL["amber"]
-BG = PAL["bg"]
+BG = APP_BACKGROUND
 CARD = PAL["card"]
 HIGH = TIER_COLORS["High"]
 MEDIUM = TIER_COLORS["Medium"]
