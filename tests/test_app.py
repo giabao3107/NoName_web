@@ -11,4 +11,3 @@ def test_streamlit_dashboard_renders_without_exceptions():
     assert not app.exception
     assert len(app.tabs) == 4
     assert len(app.get("plotly_chart")) >= 10
-    assert any("Record-level customer rows are excluded" in warning.value for warning in app.warning)

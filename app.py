@@ -3,22 +3,25 @@
 from __future__ import annotations
 
 
+import os
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from data import customer_frame, filter_customers, load_dashboard_data
+from data import customer_frame, filter_customers, load_dashboard_data, update_full_population_aggregates
+from theme import PAL, TIER_COLORS, status_colors
 
-NAVY = "#0F172A"
-ORANGE = "#F97316"
-AMBER = "#F59E0B"
-BG = "#F8FAFC"
-HIGH = "#10B981"
-MEDIUM = "#F59E0B"
-LOW = "#EF4444"
-NEUTRAL = "#64748B"
-TIER_COLORS = {"High": HIGH, "Medium": MEDIUM, "Low": LOW}
+NAVY = PAL["navy"]
+ORANGE = PAL["orange"]
+AMBER = PAL["amber"]
+BG = PAL["bg"]
+CARD = PAL["card"]
+HIGH = TIER_COLORS["High"]
+MEDIUM = TIER_COLORS["Medium"]
+LOW = TIER_COLORS["Low"]
+NEUTRAL = PAL["grey"]
 TIER_LABELS = {"High": "High health", "Medium": "Moderate health", "Low": "Financial stress"}
 
 st.set_page_config(
@@ -30,13 +33,13 @@ st.set_page_config(
 st.markdown(
     f"""
     <style>
-      .stApp {{ background: {BG}; color: {NAVY}; }}
-      [data-testid="stSidebar"] {{ background: #fff; border-right: 1px solid rgba(100,116,139,.22); }}
+      .stApp {{ background: {BG}; color: {PAL['ink']}; }}
+      [data-testid="stSidebar"] {{ background: {CARD}; border-right: 1px solid rgba(88,87,87,.22); }}
       .hero {{ background: {NAVY}; color: #fff; padding: 1.55rem 2rem 1.35rem; border-radius: 6px; margin-bottom: 1.1rem; }}
       .hero h1 {{ color: #fff; font-size: clamp(1.6rem, 3vw, 2.25rem); margin: 0 0 .4rem; font-weight: 750; }}
-      .hero p {{ color: rgba(248,250,252,.75); margin: 0; }}
-      .meta-line {{ color: rgba(248,250,252,.62); font-size: .78rem; margin-top: .9rem; }}
-      [data-testid="stMetric"] {{ background:#fff; border:1px solid rgba(100,116,139,.22); border-radius:6px; padding:1rem 1.05rem; min-height: 118px; }}
+      .hero p {{ color: rgba(255,255,255,.82); margin: 0; }}
+      .meta-line {{ color: rgba(255,255,255,.72); font-size: .78rem; margin-top: .9rem; }}
+      [data-testid="stMetric"] {{ background:{CARD}; border:1px solid rgba(88,87,87,.22); border-radius:6px; padding:1rem 1.05rem; min-height: 118px; }}
       [data-testid="stMetricLabel"] {{ color:{NEUTRAL}; }}
       div[data-testid="stMetricValue"] {{ color:{NAVY}; font-weight:750; }}
       h2, h3 {{ color:{NAVY}; }}
@@ -75,14 +78,14 @@ def style_figure(fig: go.Figure, *, height: int = 340, legend: bool = True) -> g
     fig.update_layout(
         height=height,
         margin={"l": 18, "r": 18, "t": 18, "b": 18},
-        paper_bgcolor="white",
-        plot_bgcolor="white",
-        font={"family": "Inter, system-ui, sans-serif", "color": NAVY, "size": 11},
+        paper_bgcolor=CARD,
+        plot_bgcolor=CARD,
+        font={"family": "Inter, system-ui, sans-serif", "color": PAL["ink"], "size": 11},
         legend={"orientation": "h", "y": -0.2, "x": 0, "font": {"size": 10}, "visible": legend},
         hoverlabel={"bgcolor": NAVY, "font": {"color": "white"}},
     )
-    fig.update_xaxes(showgrid=False, linecolor="rgba(100,116,139,.2)")
-    fig.update_yaxes(gridcolor="rgba(100,116,139,.15)", zerolinecolor="rgba(100,116,139,.2)")
+    fig.update_xaxes(showgrid=False, linecolor="rgba(88,87,87,.22)")
+    fig.update_yaxes(gridcolor="rgba(88,87,87,.18)", zerolinecolor="rgba(88,87,87,.22)")
     return fig
 
 
@@ -123,7 +126,7 @@ def draw_profile(profile: dict, score_key: str, score_label: str, *, validation_
             orientation="h",
             text=component_frame["Points"].map(lambda v: f"{v:.1f}"),
             color="Points",
-            color_continuous_scale=[LOW, AMBER, HIGH],
+            color_continuous_scale=status_colors(),
             range_color=(0, 100),
         )
         fig.update_layout(coloraxis_showscale=False, yaxis={"categoryorder": "total ascending"})
@@ -157,7 +160,7 @@ def show_financial_health(data: dict) -> None:
     product_col, dti_col = st.columns(2)
     with product_col:
         products = pd.DataFrame(fh["product"])
-        fig = px.bar(products, x="PRODUCT", y="bad_rate", color="bad_rate", color_continuous_scale=[HIGH, AMBER, LOW],
+        fig = px.bar(products, x="PRODUCT", y="bad_rate", color="bad_rate", color_continuous_scale=status_colors(),
                      hover_data={"n_contracts": True, "delinquency_rate": ":.2%", "default_rate": ":.2%", "bad_rate": ":.2%"},
                      labels={"PRODUCT": "Product", "bad_rate": "Observed bad rate"}, title="Delinquency and default by product")
         fig.update_yaxes(tickformat=".1%", title="Bad rate")
@@ -221,7 +224,7 @@ def show_engagement(data: dict) -> None:
         st.caption("Descriptive association among customers with a sales-call outcome. App use is not evidence of causing conversion.")
     with leads_col:
         source_data = pd.DataFrame(eng["lead_source"])
-        fig = px.bar(source_data, x="LEAD_SOURCE", y="deal_rate", color="deal_rate", color_continuous_scale=[LOW, AMBER, HIGH],
+        fig = px.bar(source_data, x="LEAD_SOURCE", y="deal_rate", color="deal_rate", color_continuous_scale=status_colors(),
                      hover_data={"n_leads": True, "signed_within_90d": ":.1%", "active_180d_after": ":.1%", "deal_rate": ":.2%"},
                      labels={"LEAD_SOURCE": "Lead source", "deal_rate": "Lead deal rate"}, title="Lead source performance")
         fig.update_yaxes(tickformat=".1%")
@@ -230,7 +233,7 @@ def show_engagement(data: dict) -> None:
 
     temporal = pd.DataFrame(eng["early_temporal"])
     if not temporal.empty:
-        fig = px.bar(temporal, x="trend", y="bad_rate", color="trend", color_discrete_map={"Rising": HIGH, "Stable": NEUTRAL, "Declining": AMBER, "No prior activity": "#CBD5E1"},
+        fig = px.bar(temporal, x="trend", y="bad_rate", color="trend", color_discrete_map={"Rising": PAL["red"], "Stable": NEUTRAL, "Declining": PAL["navy"], "No prior activity": PAL["amber"]},
                      hover_data={"n": True, "bad_rate": ":.2%"}, labels={"trend": "Activity trajectory", "bad_rate": "Observed delinquency"},
                      title="Early-warning test: engagement trajectory and delinquency")
         fig.update_yaxes(tickformat=".1%")
@@ -248,14 +251,14 @@ def show_segments(data: dict, customers: pd.DataFrame) -> None:
     health_order = ["Low", "Medium", "High"]
     engagement_order = ["Low", "Medium", "High"]
     cell_counts = cells.pivot(index="eng", columns="fh", values="customers").reindex(index=engagement_order, columns=health_order)
-    fig = px.imshow(cell_counts, text_auto=":,", aspect="auto", color_continuous_scale=["#FFF7ED", "#FDBA74", ORANGE],
+    fig = px.imshow(cell_counts, text_auto=":,", aspect="auto", color_continuous_scale=[PAL["amber"], PAL["navy"]],
                     labels={"x": "Financial health tier", "y": "Engagement tier", "color": "Customers"},
                     title="Customer opportunity matrix")
     fig.update_xaxes(tickmode="array", tickvals=list(range(3)), ticktext=["Financial stress", "Moderate health", "High health"])
     fig.update_yaxes(tickmode="array", tickvals=list(range(3)), ticktext=["Low / dormant", "Medium", "High"])
     fig.update_traces(hovertemplate="Engagement: %{y}<br>Financial health: %{x}<br>Customers: %{z:,}<extra></extra>")
     st.plotly_chart(style_figure(fig, height=390, legend=False), width="stretch")
-    st.caption("Counts cover the full customer population. Click cell interactions are not used as app filters; use the explorer controls below.")
+    st.caption("Matrix counts cover the full scored customer population; source-cohort counts remain tied to each analysis's own eligibility window.")
 
     actions = pd.DataFrame(data["matrix"]["nba"]).sort_values("n", ascending=True)
     fig = px.bar(actions.tail(14), x="n", y="Next_Best_Action", orientation="h", color="persona",
@@ -271,30 +274,45 @@ def show_segments(data: dict, customers: pd.DataFrame) -> None:
     ev_cols[2].metric("Customers worth calling", fmt_int(data["kpi"]["call_worthy"]))
     st.caption(f"Value model parameters: gross yield {fmt_pct(economics['gross_yield'])}, roll rate {fmt_pct(economics['roll_rate'])}, LGD {fmt_pct(economics['lgd'])}, call attempt cost {fmt_vnd(economics['cost_per_attempt'])} VND. This is modeled expected value, not realized profit.")
 
-    st.subheader("Customer explorer")
+    st.subheader("Customer-level drilldown")
     if customers.empty:
-        st.warning("Record-level customer rows are excluded from this public demo to protect financial information. Portfolio charts and segment summaries describe the full scored population.")
+        st.info(f"Population analytics above summarize all {fmt_int(data['meta']['n_customers'])} scored customers and {fmt_int(data['kpi']['n_rows_raw'])} source records across five tables. Individual records are omitted from the public snapshot to protect financial information.")
     else:
-        st.info(f"Explorer sample: {fmt_int(len(customers))} customers from a {fmt_int(data['meta']['n_customers'])}-customer scored population.")
-        search_col, health_col, engagement_col, priority_col = st.columns([1.4, 1, 1, 1])
+        st.info(f"Local full-output file loaded: {fmt_int(len(customers))} of {fmt_int(data['meta']['n_customers'])} customers. Record-level drilldown is local only; public aggregate charts remain full-population.")
+        search_col, health_col, engagement_col = st.columns([1.4, 1, 1])
         search = search_col.text_input("Search customer ID", placeholder="e.g. 3733")
         health = health_col.multiselect("Financial health", ["High", "Medium", "Low"], default=[])
         engagement = engagement_col.multiselect("Engagement", ["High", "Medium", "Low"], default=[])
-        priorities = priority_col.multiselect("Priority", [0, 1, 2, 3, 4], default=[], format_func=lambda value: f"P{value}")
+        priorities = []
+        if "prio" in customers.columns:
+            priority_col = st.columns([1, 1, 1, 1])[3]
+            priorities = priority_col.multiselect("Priority", [0, 1, 2, 3, 4], default=[], format_func=lambda value: f"P{value}")
         filtered = filter_customers(customers, search=search, fh_tiers=health, engagement_tiers=engagement, priorities=priorities)
-        sort_col = st.selectbox("Sort customers by", ["ev", "fhs", "eng", "prio", "offer"], format_func=lambda value: {"ev": "Call expected value", "fhs": "Financial health", "eng": "Engagement", "prio": "Action priority", "offer": "Offer cap"}[value])
+        sort_labels = {"fhs": "Financial health", "eng": "Engagement", "offer": "Offer cap", "id": "Customer ID"}
+        sort_options = [key for key in ("ev", "fhs", "eng", "prio", "offer", "id") if key in filtered.columns]
+        sort_col = st.selectbox("Sort customer records by", sort_options, format_func=lambda value: sort_labels.get(value, "Call expected value"))
         filtered = filtered.sort_values(sort_col, ascending=sort_col == "prio", na_position="last")
         display = filtered.head(100).copy()
-        rename = {"id": "Customer ID", "fhs": "Financial health", "eng": "Engagement", "fh_tier": "Health tier", "eng_tier": "Engagement tier", "persona": "Segment", "action": "Next best action", "channel": "Channel", "prio": "Priority", "offer": "Offer cap (VND)", "ev": "Call EV (VND)", "rationale": "Why this action"}
+        rename = {"id": "Customer ID", "fhs": "Financial health", "eng": "Engagement", "fh_tier": "Health tier", "eng_tier": "Engagement tier", "persona": "Segment", "action": "Next best action", "channel": "Channel", "prio": "Priority", "offer": "Offer cap (VND)", "ev": "Call EV (VND)", "rationale": "Why this action", "opportunity": "Opportunity", "matrix_segment": "Matrix segment"}
         fields = [key for key in rename if key in display.columns]
         display = display[fields].rename(columns=rename)
-        st.caption(f"{len(filtered):,} sample customers match; showing up to 100. Score / action rationale is from the scoring output.")
+        st.caption(f"Showing up to 100 of {len(filtered):,} matching local full-output records; filters/search apply across the loaded population.")
         st.dataframe(display, hide_index=True, width="stretch", height=460)
 
 
 def main() -> None:
     data = load_dashboard_data()
-    customers = customer_frame(data)
+    local_output = os.environ.get("BI10_CUSTOMER_OUTPUT_CSV")
+    try:
+        customers = customer_frame(data, local_output)
+    except (OSError, ValueError) as exc:
+        st.error(f"Could not load the configured local customer output: {exc}")
+        st.stop()
+    if local_output and len(customers) != data["meta"]["n_customers"]:
+        st.error(f"Full local CSV has {len(customers):,} rows; expected {data['meta']['n_customers']:,} customers.")
+        st.stop()
+    if local_output:
+        data = update_full_population_aggregates(data, customers)
     meta, kpi = data["meta"], data["kpi"]
     fh_profiles = data["fh"]["tier_profile"]
     eng_profiles = data["eng"]["tier_profile"]
@@ -318,17 +336,18 @@ def main() -> None:
 
     with st.sidebar:
         st.markdown("### Explore the analysis")
-        st.markdown("Navigate the three BI10 challenges using the tabs. Filter score tiers and inspect customer-level explanations in the segment explorer.")
+        st.markdown(f"Explore full-population aggregate analysis across {fmt_int(meta['n_customers'])} customers and five source tables. No individual records are published in this version.")
         st.markdown("---")
         st.markdown("**Scoring methodology**")
         st.caption("Financial health: 40% repayment, 30% credit standing, 15% DTI, 15% down-payment; policy caps applied after base score.")
         st.caption("Engagement: 20% digital, 20% recency, 25% frequency, 20% responsiveness, 15% product breadth.")
         st.markdown("---")
-        st.caption(f"Source snapshot built {meta['generated']}. Explorer sample: {fmt_int(len(customers))} customers; population aggregates describe {fmt_int(population)}.")
+        st.caption(f"Snapshot {meta['snapshot']}; {fmt_int(meta['n_customers'])} scored customers; {fmt_int(kpi['n_rows_raw'])} raw rows across five source tables.")
 
     tabs = st.tabs(["Overview", "Challenge 1 · Financial health", "Challenge 2 · Engagement", "Challenge 3 · Segments & actions"])
     with tabs[0]:
         st.subheader("Executive overview")
+        st.caption(f"Full-population view: {fmt_int(population)} scored customers; each chart uses the analysis cohort defined for that metric.")
         left, right = st.columns(2)
         with left:
             tiers = ("High", "Medium", "Low")
@@ -361,7 +380,7 @@ def main() -> None:
         show_segments(data, customers)
 
     st.markdown("---")
-    st.caption("Source: BI10 Round 2 aggregate analysis snapshot. Customer-level financial scores, identifiers, and individual action rationales are excluded from this public demo. Scores and actions are decision support, not causal claims or a substitute for policy / human review.")
+    st.caption("Source: BI10 Round 2 analysis snapshot. Portfolio metrics summarize the complete scored customer population and eligible source cohorts. Individual customer records are not bundled in this public demo; scores and actions remain decision support, not causal claims or credit decisions.")
 
 
 if __name__ == "__main__":

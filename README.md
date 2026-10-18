@@ -1,45 +1,52 @@
 # Customer Intelligence 360° — Streamlit dashboard
 
-Interactive Streamlit + Plotly implementation of the BI10 Season 10 Round 2 financial-services dashboard. It presents the three challenge areas: explainable Financial Health Score, Engagement Score and validation, and customer segmentation with Next Best Actions.
+Interactive Streamlit + Plotly dashboard for the BI10 Season 10 Round 2 financial-services challenges: Financial Health Score, Engagement Score, and segmentation / Next Best Actions. It uses the team's palette from `Code/config/utils.py`.
 
-## Run locally
+## Public demo and full-population analysis
 
-Run from this dashboard directory:
+`data/ci360.json` contains refreshed aggregates calculated against the complete **1,000,528-customer** output file. It has no customer IDs or row-level financial records. The hosted dashboard shows portfolio-wide score distributions, profiles, segment counts, action counts, and the other aggregate analyses without exposing individual customers.
 
-```bash
-python -m pip install -r requirements.txt
-streamlit run app.py
+The final customer-level CSV is about 1.23 GB and contains customer identifiers, scores, offer values, and action rationales. Do not copy it into the public GitHub repository or set the local-data environment variable on a public deployment.
+
+## Analyze all customer records locally
+
+From the source project root, install dependencies and point the app at the complete Task 3 output:
+
+```powershell
+python -m pip install -r dashboard_app/requirements.txt
+$env:BI10_CUSTOMER_OUTPUT_CSV = "output/Task3/scores/final_customer_intelligence_output.csv"
+streamlit run dashboard_app/app.py
 ```
 
-When this folder is copied to the root of its dedicated GitHub repository, the same commands apply.
+The app loads the complete file (not a sample), validates that it has one row per scored customer, and refreshes the dashboard's customer-tier, score-histogram, profile, matrix, and Next Best Action aggregates from those rows. Search, tier filters, and sorting in the local drilldown apply across the full loaded population; the table displays up to 100 matching rows at a time. The CSV stays on the local machine.
 
-## Data, privacy, and size
+To run the public aggregate-only version locally, omit `BI10_CUSTOMER_OUTPUT_CSV`:
 
-`data/ci360.json` is a small aggregate-only snapshot extracted from the source `dashboard.html`. It contains full-population analysis metrics, charts' supporting aggregates, and **no customer-level rows or identifiers**. The 1.23 GB customer-level output CSV and raw source data are not included. The hosted demo consequently disables the record-level explorer and calls this out in the UI. This keeps the public dashboard from publishing individual financial scores, customer identifiers, offer amounts, or personal action rationales.
-
-Before copying this folder into the standalone dashboard repository, refresh the safe aggregate snapshot from the source project root after updating `dashboard.html`:
-
-```bash
-python dashboard_app/prepare_data.py dashboard.html dashboard_app/data/ci360.json
+```powershell
+Remove-Item Env:BI10_CUSTOMER_OUTPUT_CSV -ErrorAction SilentlyContinue
+streamlit run dashboard_app/app.py
 ```
 
-The deployed repository contains only the generated aggregate snapshot, not the source HTML or raw data.
-The preparation script has an explicit `--include-customer-sample` option for authorized local analysis only. That file contains record-level financial attributes and must not be pushed to a public repository or deployed publicly without appropriate data authorization and privacy review:
+## Refresh the safe snapshot before publishing
 
-```bash
-python dashboard_app/prepare_data.py dashboard.html dashboard_app/data/ci360_local.json --include-customer-sample
+From the source project root, regenerate the aggregate JSON using the current full output. The customer file is read to calculate aggregates but its records are not written into the JSON:
+
+```powershell
+python dashboard_app/prepare_data.py dashboard.html dashboard_app/data/ci360.json --customer-output output/Task3/scores/final_customer_intelligence_output.csv
 ```
+
+Copy only the contents of `dashboard_app/` to the root of the dedicated dashboard repository. The full CSV, raw tables, and record-level local snapshots are excluded from the published app.
 
 ## Deploy
 
-Recommended host: Streamlit Community Cloud. Copy the contents of this `dashboard_app/` folder to the root of the new GitHub repository; create a Streamlit app pointing at `app.py` and specify `requirements.txt` as its dependency file. The checked-in data snapshot is aggregate-only; no secrets or backend database are required.
+For Streamlit Community Cloud, point the app to `app.py` on branch `main` and use `requirements.txt`. The repository's `data/ci360.json` is aggregate-only; do not configure `BI10_CUSTOMER_OUTPUT_CSV` in the hosted app.
 
 ## Methodology notes
 
 - Financial Health Score: repayment history 40%, credit standing 30%, debt-to-income 15%, down-payment 15%, followed by policy caps.
 - Engagement Score: digital 20%, recency 20%, frequency 25%, responsiveness 20%, product breadth 15%.
 - Tier boundaries: High ≥80, Medium 50–79, Low <50.
-- Delinquency, conversion, and score-validation charts are observational. They support prioritization and calibration, not causal conclusions.
+- Delinquency, conversion, and score-validation charts are observational; they do not establish causality.
 - Expected call value is modeled, not realized profit.
 
-Run tests from this directory with `python -m pytest tests -q`. The aggregate snapshot is derived from the challenge analysis outputs and inlined summary payload in the source project's `dashboard.html`. See the source project's `BI10_ROUND02.md` brief and `output/Task{1,2,3}/report/` for supporting analyses.
+Run tests from this directory with `python -m pytest tests -q`. The analysis context is in the source project's `BI10_ROUND02.md` and `output/Task{1,2,3}/report/`.

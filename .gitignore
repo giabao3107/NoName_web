@@ -1,4 +1,5 @@
-# Record-level financial sample is local-only and must not be published.
-data/ci360_local.json
+# Do not publish record-level customer data or generated local snapshots.
+data/*.csv
+data/*local*.json
 __pycache__/
 *.py[cod]
