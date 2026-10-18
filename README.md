@@ -4,6 +4,8 @@ Interactive Streamlit + Plotly dashboard for the BI10 Season 10 Round 2 financia
 
 ## Public demo and full-population analysis
 
+Live dashboard: [https://shootingstar.streamlit.app/](https://shootingstar.streamlit.app/).
+
 `data/ci360.json` contains refreshed aggregates calculated against the complete **1,000,528-customer** output file. It has no customer IDs or row-level financial records. The hosted dashboard shows portfolio-wide score distributions, profiles, segment counts, action counts, and the other aggregate analyses without exposing individual customers.
 
 The final customer-level CSV is about 1.23 GB and contains customer identifiers, scores, offer values, and action rationales. Do not copy it into the public GitHub repository or set the local-data environment variable on a public deployment.
